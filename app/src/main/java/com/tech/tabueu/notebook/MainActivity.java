@@ -1,6 +1,7 @@
 package com.tech.tabueu.notebook;
 
 import android.content.Intent;
+import android.database.sqlite.SQLiteDatabase;
 import android.os.Bundle;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.NavigationView;
@@ -25,6 +26,8 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
     private LinearLayoutManager mNotesLayoutManager;
     private CourseRecyclerAdapter mCourseRecyclerAdapter;
     private GridLayoutManager mCoursesLayoutManager;
+    //usage heplperDb init DB
+    private NoteBookOpenHelper mDbOpenHelper;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -32,6 +35,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         setContentView(R.layout.activity_main);
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
+        mDbOpenHelper = new NoteBookOpenHelper(this);
 
         FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
         fab.setOnClickListener(new View.OnClickListener() {
@@ -60,6 +64,9 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
     }
 
     private void initializeDisplayContent() {
+        //loading data from database
+        DataManager.loadFromDatabase(mDbOpenHelper);
+
         mRecyclerItems = (RecyclerView) findViewById(R.id.list_items);
         mNotesLayoutManager = new LinearLayoutManager(this);
         mCoursesLayoutManager = new GridLayoutManager(this,
@@ -78,6 +85,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         mRecyclerItems.setLayoutManager(mNotesLayoutManager);
         mRecyclerItems.setAdapter(mNoteRecyclerAdapter);
 
+        SQLiteDatabase db = mDbOpenHelper.getReadableDatabase();
         selectNavigationMenuItem(R.id.nav_notes);
     }
 
@@ -150,4 +158,12 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         View view = findViewById(R.id.list_items);
         Snackbar.make(view, message_id, Snackbar.LENGTH_LONG).show();
     }
+
+    @Override
+    protected void onDestroy() {
+        mDbOpenHelper.close();
+        super.onDestroy();
+
+    }
+
 }

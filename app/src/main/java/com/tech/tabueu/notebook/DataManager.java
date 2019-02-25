@@ -1,7 +1,15 @@
 package com.tech.tabueu.notebook;
 
+import android.database.Cursor;
+import android.database.sqlite.SQLiteDatabase;
+
+import com.tech.tabueu.notebook.NoteBookDatabaseContract.CourseInfoEntry;
+
 import java.util.ArrayList;
 import java.util.List;
+
+import static com.tech.tabueu.notebook.NoteBookDatabaseContract.NoteInfoEntry;
+import static com.tech.tabueu.notebook.NoteBookDatabaseContract.NoteInfoEntry.COLUMN_NOTE_TITLE;
 
 
 public class DataManager {
@@ -13,18 +21,89 @@ public class DataManager {
     public static DataManager getInstance() {
         if(ourInstance == null) {
             ourInstance = new DataManager();
-            ourInstance.initializeCourses();
-            ourInstance.initializeExampleNotes();
+//            ourInstance.initializeCourses();
+//            ourInstance.initializeExampleNotes();
         }
         return ourInstance;
     }
 
+    /**
+     *  load all entity of this module : courses and notes
+     */
+    public static void loadFromDatabase(NoteBookOpenHelper dbHelper) {
+        SQLiteDatabase db = dbHelper.getReadableDatabase();
+
+        final String[] courseColumns = {
+                CourseInfoEntry.COLUMN_COURSE_ID,
+                CourseInfoEntry.COLUMN_COURSE_TITLE};
+        //query from course
+        final Cursor courseCursor = db.query(CourseInfoEntry.TABLE_NAME, courseColumns,
+                null, null, null, null, CourseInfoEntry.COLUMN_COURSE_TITLE + " DESC");
+        loadCoursesFromDatabase(courseCursor);
+
+        final String[] noteColumns = {
+                NoteInfoEntry.COLUMN_NOTE_TITLE,
+                NoteInfoEntry.COLUMN_NOTE_TEXT,
+                NoteInfoEntry.COLUMN_COURSE_ID};
+        String noteOrderBy = NoteInfoEntry.COLUMN_COURSE_ID + "," + NoteInfoEntry.COLUMN_NOTE_TITLE;
+
+        //query from note
+        final Cursor noteCursor = db.query(NoteInfoEntry.TABLE_NAME, noteColumns,
+                null, null, null, null, noteOrderBy);
+        loadNotesFromDatabase(noteCursor);
+    }
+
+    /**
+     * initialize from data base the singleton instance with notes
+     * @param cursor represent query results
+     */
+    private static void loadNotesFromDatabase(Cursor cursor) {
+        int noteTitlePos = cursor.getColumnIndex(COLUMN_NOTE_TITLE); //get index in cursor of colunm COLUMN_NOTE_TITLE
+        int noteTextPos = cursor.getColumnIndex(NoteInfoEntry.COLUMN_NOTE_TEXT);
+        int courseIdPos = cursor.getColumnIndex(NoteInfoEntry.COLUMN_COURSE_ID);
+
+        DataManager dm = getInstance();
+        dm.mNotes.clear();
+        while(cursor.moveToNext()) {
+            String noteTitle = cursor.getString(noteTitlePos);
+            String noteText = cursor.getString(noteTextPos);
+            String courseId = cursor.getString(courseIdPos);
+
+            CourseInfo noteCourse = dm.getCourse(courseId);
+            NoteInfo note = new NoteInfo(noteCourse, noteTitle, noteText);
+            dm.mNotes.add(note);
+        }
+        cursor.close();
+    }
+
+    /**
+     * initialize from data base the singleton instance with courses
+     * @param cursor
+     */
+    private static void loadCoursesFromDatabase(Cursor cursor) {
+        //get index of different column
+        int courseIdPos = cursor.getColumnIndex(CourseInfoEntry.COLUMN_COURSE_ID);
+        int courseTitlePos = cursor.getColumnIndex(CourseInfoEntry.COLUMN_COURSE_TITLE);
+
+        DataManager dm = getInstance();
+        dm.mCourses.clear();//clear courses list
+        //loading courses list from cusor
+        while(cursor.moveToNext()) {
+            String courseId = cursor.getString(courseIdPos);
+            String courseTitle = cursor.getString(courseTitlePos);
+            CourseInfo course = new CourseInfo(courseId, courseTitle, null);
+
+            dm.mCourses.add(course);
+        }
+        cursor.close(); //close cursor
+    }
+
     public String getCurrentUserName() {
-        return "Jim Wilson";
+        return "Laurent";
     }
 
     public String getCurrentUserEmail() {
-        return "jimw@jwhh.com";
+        return "laurent@gmail.com";
     }
 
     public List<NoteInfo> getNotes() {
@@ -189,6 +268,16 @@ public class DataManager {
         modules.add(new ModuleInfo("java_core_m10", "Persisting Objects with Serialization"));
 
         return new CourseInfo("java_core", "Java Fundamentals: The Core Platform", modules);
+    }
+
+    public int createNewNote(CourseInfo course, String noteTitle, String noteText) {
+        int index = createNewNote();
+        NoteInfo note = getNotes().get(index);
+        note.setCourse(course);
+        note.setTitle(noteTitle);
+        note.setText(noteText);
+
+        return index;
     }
     //endregion
 
