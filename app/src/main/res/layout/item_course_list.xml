@@ -27,7 +27,7 @@
                 android:layout_marginTop="0dp"
                 android:text="TextView"
                 android:textAlignment="center"
-                android:textAppearance="@android:style/TextAppearance.DeviceDefault.Medium"
+                android:textAppearance="@style/CourseTitle"
                 app:layout_constraintLeft_toLeftOf="parent"
                 app:layout_constraintRight_toRightOf="parent"
                 app:layout_constraintTop_toTopOf="parent" />
@@ -45,7 +45,7 @@
                 app:layout_constraintRight_toRightOf="parent"
                 app:layout_constraintTop_toBottomOf="@+id/text_course"
 
-                />
+                app:srcCompat="@drawable/ic_slideshow_black_24dp" />
 
         </android.support.constraint.ConstraintLayout>
     </android.support.v7.widget.ContentFrameLayout>
