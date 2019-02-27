@@ -27,16 +27,11 @@ public class DataManager {
         return ourInstance;
     }
 
-    /**
-     *  load all entity of this module : courses and notes
-     */
     public static void loadFromDatabase(NoteBookOpenHelper dbHelper) {
         SQLiteDatabase db = dbHelper.getReadableDatabase();
-
         final String[] courseColumns = {
                 CourseInfoEntry.COLUMN_COURSE_ID,
                 CourseInfoEntry.COLUMN_COURSE_TITLE};
-        //query from course
         final Cursor courseCursor = db.query(CourseInfoEntry.TABLE_NAME, courseColumns,
                 null, null, null, null, CourseInfoEntry.COLUMN_COURSE_TITLE + " DESC");
         loadCoursesFromDatabase(courseCursor);
@@ -44,23 +39,19 @@ public class DataManager {
         final String[] noteColumns = {
                 NoteInfoEntry.COLUMN_NOTE_TITLE,
                 NoteInfoEntry.COLUMN_NOTE_TEXT,
-                NoteInfoEntry.COLUMN_COURSE_ID};
+                NoteInfoEntry.COLUMN_COURSE_ID,
+                NoteInfoEntry._ID};
         String noteOrderBy = NoteInfoEntry.COLUMN_COURSE_ID + "," + NoteInfoEntry.COLUMN_NOTE_TITLE;
-
-        //query from note
         final Cursor noteCursor = db.query(NoteInfoEntry.TABLE_NAME, noteColumns,
                 null, null, null, null, noteOrderBy);
         loadNotesFromDatabase(noteCursor);
     }
 
-    /**
-     * initialize from data base the singleton instance with notes
-     * @param cursor represent query results
-     */
     private static void loadNotesFromDatabase(Cursor cursor) {
-        int noteTitlePos = cursor.getColumnIndex(COLUMN_NOTE_TITLE); //get index in cursor of colunm COLUMN_NOTE_TITLE
+        int noteTitlePos = cursor.getColumnIndex(NoteInfoEntry.COLUMN_NOTE_TITLE);
         int noteTextPos = cursor.getColumnIndex(NoteInfoEntry.COLUMN_NOTE_TEXT);
         int courseIdPos = cursor.getColumnIndex(NoteInfoEntry.COLUMN_COURSE_ID);
+        int idPos = cursor.getColumnIndex(NoteInfoEntry._ID);
 
         DataManager dm = getInstance();
         dm.mNotes.clear();
@@ -68,26 +59,21 @@ public class DataManager {
             String noteTitle = cursor.getString(noteTitlePos);
             String noteText = cursor.getString(noteTextPos);
             String courseId = cursor.getString(courseIdPos);
+            int id = cursor.getInt(idPos);
 
             CourseInfo noteCourse = dm.getCourse(courseId);
-            NoteInfo note = new NoteInfo(noteCourse, noteTitle, noteText);
+            NoteInfo note = new NoteInfo(id, noteCourse, noteTitle, noteText);
             dm.mNotes.add(note);
         }
         cursor.close();
     }
 
-    /**
-     * initialize from data base the singleton instance with courses
-     * @param cursor
-     */
     private static void loadCoursesFromDatabase(Cursor cursor) {
-        //get index of different column
         int courseIdPos = cursor.getColumnIndex(CourseInfoEntry.COLUMN_COURSE_ID);
         int courseTitlePos = cursor.getColumnIndex(CourseInfoEntry.COLUMN_COURSE_TITLE);
 
         DataManager dm = getInstance();
-        dm.mCourses.clear();//clear courses list
-        //loading courses list from cusor
+        dm.mCourses.clear();
         while(cursor.moveToNext()) {
             String courseId = cursor.getString(courseIdPos);
             String courseTitle = cursor.getString(courseTitlePos);
@@ -95,7 +81,7 @@ public class DataManager {
 
             dm.mCourses.add(course);
         }
-        cursor.close(); //close cursor
+        cursor.close();
     }
 
     public String getCurrentUserName() {
@@ -103,7 +89,7 @@ public class DataManager {
     }
 
     public String getCurrentUserEmail() {
-        return "laurent@gmail.com";
+        return "lau@gmail.com";
     }
 
     public List<NoteInfo> getNotes() {
@@ -280,5 +266,4 @@ public class DataManager {
         return index;
     }
     //endregion
-
 }
